@@ -11,7 +11,7 @@ type Post struct {
 
 type User struct {
 	gorm.Model
-	Username    string
+	Username    string `gorm:"unique"`
 	Password    string
 	DisplayName string
 	Posts       []Post
