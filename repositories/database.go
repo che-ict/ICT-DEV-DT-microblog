@@ -3,15 +3,22 @@ package repositories
 import (
 	"github.com/che-ict/DEV-DT-Microblog/models"
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
+	"os"
 )
 
 var connection *gorm.DB
 
 func connect() {
 	var err error
-	connection, err = gorm.Open(sqlite.Open("db.sqlite"))
+
+	if os.Getenv("GO_APP_MODE") == "production" {
+		connection, err = gorm.Open(mysql.Open(os.Getenv("DB_CONNECT_STRING")))
+	} else {
+		connection, err = gorm.Open(sqlite.Open("db.sqlite"))
+	}
 
 	if err != nil {
 		log.Panic(err)

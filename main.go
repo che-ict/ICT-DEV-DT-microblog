@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/che-ict/DEV-DT-Microblog/handlers"
 	"github.com/che-ict/DEV-DT-Microblog/repositories"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"html/template"
 	"io"
@@ -17,6 +18,9 @@ func main() {
 	e := echo.New()
 	e.Debug = true
 	e.Renderer = t
+
+	e.Use(echoprometheus.NewMiddleware("microblog")) // adds middleware to gather metrics
+	e.GET("/metrics", echoprometheus.NewHandler())   // adds route to serve gathered metrics
 
 	e.GET("/login", handlers.LoginGetHandler)
 	e.POST("/login", handlers.LoginPostHandler)

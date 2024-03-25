@@ -1,0 +1,74 @@
+version: "3"
+services:
+  microblog:
+    build: .
+    environment:
+      - GO_APP_MODE=production
+      - DB_CONNECT_STRING=go_app:secret@tcp(database:3306)/microblog_app?parseTime=true
+    ports:
+      - "5000:1323"
+    networks:
+      - default
+      - proxy
+    depends_on:
+      database:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.${ROUTER_NAME}.entrypoints=https"
+      - "traefik.http.routers.${ROUTER_NAME}.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.${ROUTER_NAME}.tls=true"
+      - "traefik.http.routers.${ROUTER_NAME}.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${ROUTER_NAME}.service=${SERVICE_NAME}"
+  database:
+    image: mariadb:latest
+    environment:
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+      - MARIADB_DATABASE=microblog_app
+      - MARIADB_USER=go_app
+      - MARIADB_PASSWORD=secret
+    networks:
+      - default
+    healthcheck:
+      interval: 10s
+      retries: 9
+      test:
+        [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+        ]
+      timeout: 30s
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    restart: always
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - default
+
+volumes:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  proxy:
+    external: true
