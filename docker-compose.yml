@@ -2,6 +2,7 @@ version: "3"
 services:
   microblog:
     build: .
+    pull_policy: build
     environment:
       - GO_APP_MODE=production
       - DB_CONNECT_STRING=go_app:secret@tcp(database:3306)/microblog_app?parseTime=true
